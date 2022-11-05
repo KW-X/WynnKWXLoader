@@ -14,6 +14,6 @@ public class ConfigKWX {
 	@Comment({
 		  "KWX's API server."
 		})
-	public static String KWX_API_SERVER = "https://api.sample.org";
+	public static String KWX_API_SERVER = "https://kwx.skunion.org:2083";
 	
 }

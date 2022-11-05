@@ -10,6 +10,14 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Properties;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.json.JSONObject;
 import org.skunion.smallru8.wynnkwx.WynnKWX;
 
@@ -26,6 +34,7 @@ public class KWXLoader {
 	public KWXLoader(String server) {
 		hostname=server;
 		modulars = new ArrayList<KWX_Interface>();
+		trustAllTLS();
 	}
 	
 	public boolean loadModular(String discord_oauth2_code) {
@@ -78,6 +87,8 @@ public class KWXLoader {
 			modulars.forEach(m -> {
 				m.onDisable();
 			});
+			if(pluginsClassLoader!=null)
+				pluginsClassLoader.close();
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -89,7 +100,7 @@ public class KWXLoader {
 	 * @return
 	 */
 	private JSONObject verifyDiscord(String discord_oauth2_code) {
-		OkHttpClient client = new OkHttpClient();
+		OkHttpClient client = getUnsafeOkHttpClient();
 		Request request = new Request.Builder()
 				  .url(hostname+"/mod/ls/"+discord_oauth2_code)
 				  .get()
@@ -107,6 +118,72 @@ public class KWXLoader {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	private OkHttpClient getUnsafeOkHttpClient() {
+        try {
+            // Create a trust manager that does not validate certificate chains
+            final TrustManager[] trustAllCerts = new TrustManager[] {
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+ 
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                        }
+ 
+                        @Override
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[]{};
+                        }
+                    }
+            };
+ 
+            // Install the all-trusting trust manager
+            final SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            // Create an ssl socket factory with our all-trusting manager
+            final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+ 
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
+            builder.sslSocketFactory(sslSocketFactory);
+            builder.hostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            });
+ 
+            OkHttpClient okHttpClient = builder.build();
+            return okHttpClient;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+	private void trustAllTLS() {
+		TrustManager[] trustAllCerts = new TrustManager[]{
+			    new X509TrustManager() {
+			        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+			            return null;
+			        }
+			        public void checkClientTrusted(
+			            java.security.cert.X509Certificate[] certs, String authType) {
+			        }
+			        public void checkServerTrusted(
+			            java.security.cert.X509Certificate[] certs, String authType) {
+			        }
+			    }
+			};
+
+			// Install the all-trusting trust manager
+			try {
+			    SSLContext sc = SSLContext.getInstance("SSL");
+			    sc.init(null, trustAllCerts, new java.security.SecureRandom());
+			    HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+			} catch (Exception e) {
+			}
 	}
 	
 }

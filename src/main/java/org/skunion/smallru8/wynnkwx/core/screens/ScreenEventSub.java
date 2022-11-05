@@ -39,8 +39,8 @@ public class ScreenEventSub {
     		int x = event.getButtonList().get(0).x;
     		int y = event.getButtonList().get(0).y;
     		int h = event.getButtonList().get(0).height;
-    		
-    		GuiButton discordVerifyBtn = new GuiButton(87600, x-h-4, y, h, h, TextFormatting.RED+"DC");
+    		int w = event.getButtonList().get(0).width;
+    		GuiButton discordVerifyBtn = new GuiButton(87600, x+w+4, y, h, h, TextFormatting.RED+"KWX");
     		event.getButtonList().add(discordVerifyBtn);
     	}
     }
@@ -60,11 +60,11 @@ public class ScreenEventSub {
 						//載入自訂modular
 						if(dcCode!=null) {
 							WynnKWX.KWXMODULAR.unloadAllModular();
-							event.getButton().displayString = TextFormatting.YELLOW+"DC";
+							event.getButton().displayString = TextFormatting.YELLOW+"KWX";
 							if(WynnKWX.KWXMODULAR.loadModular(dcCode))
-								event.getButton().displayString = TextFormatting.GREEN+"DC";
+								event.getButton().displayString = TextFormatting.GREEN+"KWX";
 							else
-								event.getButton().displayString = TextFormatting.RED+"DC";
+								event.getButton().displayString = TextFormatting.RED+"KWX";
 						}
 					}
 				});

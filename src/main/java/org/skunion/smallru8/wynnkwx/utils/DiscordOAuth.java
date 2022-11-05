@@ -57,7 +57,7 @@ public class DiscordOAuth {
 				if (code != null) {
 					dcCode.set(code.split("code=")[1]);
 				}
-				String response = "You can now close your browser.";
+				String response = "<h1>You can now close your browser.<h1>";
 				httpExchange.sendResponseHeaders(200, response.length());
 				OutputStream stream = httpExchange.getResponseBody();
 	            stream.write(response.getBytes());
