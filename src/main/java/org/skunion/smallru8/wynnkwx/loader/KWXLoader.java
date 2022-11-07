@@ -3,6 +3,7 @@ package org.skunion.smallru8.wynnkwx.loader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -18,6 +19,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.skunion.smallru8.wynnkwx.WynnKWX;
 
@@ -28,7 +30,7 @@ import okhttp3.Response;
 public class KWXLoader {
 
 	private String hostname = "http://localhost";
-	private URLClassLoader pluginsClassLoader;
+	private URLClassLoader pluginsClassLoader = (URLClassLoader) WynnKWX.class.getClassLoader();
 	private ArrayList<KWX_Interface> modulars;
 	
 	public KWXLoader(String server) {
@@ -38,20 +40,30 @@ public class KWXLoader {
 	}
 	
 	public boolean loadModular(String discord_oauth2_code) {
+		Method method = null;
+		try {
+			method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+			method.setAccessible(true);
+		} catch (NoSuchMethodException | SecurityException e1) {
+			e1.printStackTrace();
+		}
+		
 		modulars.clear();
 		JSONObject tokenAndFileLs = verifyDiscord(discord_oauth2_code);
 		if(tokenAndFileLs==null)
 			return false;
-		String access_token = tokenAndFileLs.getString("access_token");
-		ArrayList<URL> links = new ArrayList<URL>();
+		
+		//ArrayList<URL> links = new ArrayList<URL>();
 		for(int i=0;i<tokenAndFileLs.getJSONArray("mod_func_ls").length();i++) {
 			try {
-				links.add(new URL(hostname+"/mod/dl/"+tokenAndFileLs.getJSONArray("mod_func_ls").getString(i)+"/"+access_token));
-			} catch (MalformedURLException e) {
+				method.invoke(pluginsClassLoader, new URL(tokenAndFileLs.getJSONArray("mod_func_ls").getString(i)));
+				//links.add(new URL(tokenAndFileLs.getJSONArray("mod_func_ls").getString(i)));
+			} catch (MalformedURLException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | JSONException e) {
 				e.printStackTrace();
 			}
 		}
-		pluginsClassLoader = new URLClassLoader(links.toArray(new URL[0]));
+		
+		//pluginsClassLoader = new URLClassLoader(links.toArray(new URL[0]),WynnKWX.class.getClassLoader());
 		
 		try {
 			Enumeration<URL> kwx_yml = pluginsClassLoader.findResources("kwx.yml");
@@ -63,6 +75,7 @@ public class KWXLoader {
 				Properties pro = new Properties();
 				pro.load(is);
 				String loadPath = pro.getProperty("path");
+				WynnKWX.LOG.info("Add entry point: "+loadPath);
 				is.close();
 				try {
 					///第一個切入點
@@ -87,8 +100,8 @@ public class KWXLoader {
 			modulars.forEach(m -> {
 				m.onDisable();
 			});
-			if(pluginsClassLoader!=null)
-				pluginsClassLoader.close();
+			//if(pluginsClassLoader!=null)
+				//pluginsClassLoader.close();
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
