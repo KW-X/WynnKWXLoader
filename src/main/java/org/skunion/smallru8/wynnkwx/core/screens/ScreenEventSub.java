@@ -18,6 +18,8 @@ public class ScreenEventSub {
 	
 	private static DiscordOAuth DCOAuth = null;
 	
+	private static boolean DISCORD_PASS = false;
+	
 	@SubscribeEvent
 	public static void onGuiOpen(GuiScreenEvent.InitGuiEvent.Post event) {
     	GuiScreen screen = event.getGui();
@@ -40,7 +42,14 @@ public class ScreenEventSub {
     		int y = event.getButtonList().get(0).y;
     		int h = event.getButtonList().get(0).height;
     		int w = event.getButtonList().get(0).width;
-    		GuiButton discordVerifyBtn = new GuiButton(87600, x+w+4, y, h, h, TextFormatting.RED+"KWX");
+    		
+    		String btn_text = "";
+    		if(DISCORD_PASS)
+    			btn_text+=TextFormatting.GREEN;
+    		else
+    			btn_text+=TextFormatting.RED;
+    		
+    		GuiButton discordVerifyBtn = new GuiButton(87600, x+w+4, y, h, h, btn_text+"KWX");
     		event.getButtonList().add(discordVerifyBtn);
     	}
     }
@@ -48,7 +57,7 @@ public class ScreenEventSub {
 	@SubscribeEvent
     public static void action(GuiScreenEvent.ActionPerformedEvent.Post event) {
 		if (event.getGui() instanceof GuiMainMenu) {
-			if(event.getButton().id==87600) {
+			if(event.getButton().id==87600&&!DISCORD_PASS) {
 				//執行 Discord 驗證
 				if(DCOAuth != null)
 					DCOAuth.cancelDiscordOAuth();
@@ -61,10 +70,12 @@ public class ScreenEventSub {
 						if(dcCode!=null) {
 							WynnKWX.KWXMODULAR.unloadAllModular();
 							event.getButton().displayString = TextFormatting.YELLOW+"KWX";
-							if(WynnKWX.KWXMODULAR.loadModular(dcCode))
+							if(WynnKWX.KWXMODULAR.loadModular(dcCode)) {
 								event.getButton().displayString = TextFormatting.GREEN+"KWX";
-							else
+								DISCORD_PASS = true;
+							}else {
 								event.getButton().displayString = TextFormatting.RED+"KWX";
+							}
 						}
 					}
 				});
